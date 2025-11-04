@@ -1,66 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Vers Le Vin</title>
 
-  <!-- Font Import -->
   <style>
+    /* Font import */
     @import url('https://fonts.googleapis.com/css2?family=DejaVu+Sans+Mono&display=swap');
 
+    :root{
+      --text-color: #592C38;
+      --bg: #F2F0D0;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+    }
+
     body {
-      margin: 0;
-      padding: 0;
       font-family: 'DejaVu Sans Mono', monospace;
-      background-color: #F2F0D0;
-      color: #592C38;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+      background-color: var(--bg);
+      color: var(--text-color);
+      display:flex;
+      flex-direction:column;
+      min-height:100vh;
+      position:relative;
     }
 
-    /* Navigation */
-    nav {
-      text-align: center;
-      padding: 20px;
-      font-size: 18px;
-      letter-spacing: 1px;
+    /* Top Navigation */
+    nav{
+      display:flex;
+      justify-content:center;
+      gap: 40px;
+      padding: 22px 32px;
+      font-size:18px;
     }
 
-    nav a {
-      color: #592C38;
-      text-decoration: none;
-      margin: 0 25px;
-      transition: opacity .2s;
+    nav a{
+      color:var(--text-color);
+      text-decoration:none;
+      margin:0;
+      transition:opacity .18s ease;
     }
+    nav a:hover{ opacity:.6; }
 
-    nav a:hover {
-      opacity: 0.6;
-    }
-
-    /* Content placeholder */
+    /* Main area: center both horizontally and vertically */
     .hero {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      /* add perspective so the logo flip looks 3D */
+      perspective: 1000px;
+      padding: 40px;
+    }
+
+    .brand {
+      display:flex;
+      align-items:center;
+      gap: 20px;
+      justify-content:center;
+      text-align:left;
+    }
+
+    /* Logo */
+    .logo-wrap {
+      display:inline-block;
+      width: 120px;            /* adjust size as needed */
+      height: 120px;
+      perspective: 1000px;
+    }
+
+    .logo {
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      display:block;
+      backface-visibility: hidden; /* hide backside flicker */
+      transform-style: preserve-3d;
+      transition: transform 600ms cubic-bezier(.2,.9,.3,1);
+      transform-origin: center center;
+      border-radius: 6px;
+      /* keep it visually stable (no layout shift) */
+      will-change: transform;
+    }
+
+    /* flip around vertical axis on hover (in place) */
+    .logo-wrap:hover .logo {
+      transform: rotateY(180deg);
+    }
+
+    /* Title text next to logo */
+    .brand-title {
+      font-size: 28px;
+      line-height: 1.05;
+      color: var(--text-color);
+      white-space: nowrap;
     }
 
     /* Footer bottom-left */
     footer {
       position: absolute;
-      bottom: 10px;
       left: 10px;
+      bottom: 10px;
       font-size: 14px;
-      opacity: 0.8;
+      opacity: 0.85;
+    }
+
+    /* Small screens - scale down */
+    @media (max-width:520px){
+      nav { gap:16px; font-size:15px; padding:14px; }
+      .brand { gap:12px; }
+      .logo-wrap { width:80px; height:80px; }
+      .brand-title { font-size:18px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation -->
   <nav>
     <a href="#">Home</a>
     <a href="#">Blog</a>
@@ -70,19 +129,44 @@
     <a href="#">About</a>
   </nav>
 
-  <!-- Temporary center area (your interactive JS will go here) -->
-  <div class="hero">
-    Welcome to Vers Le Vin
-  </div>
+  <main class="hero">
+    <div class="brand" aria-label="Vers Le Vin - logo and title">
+      <!-- logo with fallback paths (adjust if your file is elsewhere) -->
+      <span class="logo-wrap" aria-hidden="true">
+        <img
+          id="logo-img"
+          class="logo"
+          src="logo-stijn.jpg"
+          alt="Vers Le Vin logo"
+          onerror="
+            // try common alternative paths if the image isn't found in root
+            if(!this._tried){ this._tried = 1; this.src='assets/logo-stijn.jpg'; }
+            else if(this._tried==1){ this._tried = 2; this.src='images/logo-stijn.jpg'; }
+            else { this.style.opacity = 0.0; /* hide if not found */ }
+          ">
+      </span>
 
-  <!-- Footer -->
+      <div class="brand-title">Welcome to Vers Le Vin</div>
+    </div>
+  </main>
+
   <footer>
     © 2025 Vers Le Vin by Stijn Verschelden
   </footer>
 
-  <!-- JavaScript placeholder -->
   <script>
-    // Your interactive script will go here later
+    // Optional: add a subtle perspective correction so flip looks consistent on retina devices
+    (function(){
+      const wrap = document.querySelector('.logo-wrap');
+      if(!wrap) return;
+      // small tweak for mobile: reduce perspective on small screens
+      function adjustPerspective(){
+        const p = window.innerWidth < 520 ? 600 : 1000;
+        wrap.style.perspective = p + 'px';
+      }
+      window.addEventListener('resize', adjustPerspective, {passive:true});
+      adjustPerspective();
+    })();
   </script>
 
 </body>
