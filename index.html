@@ -52,8 +52,7 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      /* add perspective so the logo flip looks 3D */
-      perspective: 1000px;
+      perspective: 1000px; /* 3D perspective for the flip */
       padding: 40px;
     }
 
@@ -63,14 +62,16 @@
       gap: 20px;
       justify-content:center;
       text-align:left;
+      user-select: none;
     }
 
     /* Logo */
     .logo-wrap {
       display:inline-block;
-      width: 120px;            /* adjust size as needed */
+      width: 120px;
       height: 120px;
       perspective: 1000px;
+      cursor: pointer;
     }
 
     .logo {
@@ -78,17 +79,17 @@
       height:100%;
       object-fit:contain;
       display:block;
-      backface-visibility: hidden; /* hide backside flicker */
+      backface-visibility: hidden;
       transform-style: preserve-3d;
       transition: transform 600ms cubic-bezier(.2,.9,.3,1);
       transform-origin: center center;
       border-radius: 6px;
-      /* keep it visually stable (no layout shift) */
       will-change: transform;
     }
 
-    /* flip around vertical axis on hover (in place) */
-    .logo-wrap:hover .logo {
+    /* Hover and flipped state rotate around the Y axis (vertical) */
+    .logo-wrap:hover .logo,
+    .logo-wrap.is-flipped .logo {
       transform: rotateY(180deg);
     }
 
@@ -131,19 +132,14 @@
 
   <main class="hero">
     <div class="brand" aria-label="Vers Le Vin - logo and title">
-      <!-- logo with fallback paths (adjust if your file is elsewhere) -->
-      <span class="logo-wrap" aria-hidden="true">
+      <!-- Logo specifically from images/logo-stijn.jpg -->
+      <span class="logo-wrap" id="logoWrap" role="img" aria-hidden="false" tabindex="0" title="Vers Le Vin logo (click or hover)">
         <img
           id="logo-img"
           class="logo"
-          src="logo-stijn.jpg"
+          src="images/logo-stijn.jpg"
           alt="Vers Le Vin logo"
-          onerror="
-            // try common alternative paths if the image isn't found in root
-            if(!this._tried){ this._tried = 1; this.src='assets/logo-stijn.jpg'; }
-            else if(this._tried==1){ this._tried = 2; this.src='images/logo-stijn.jpg'; }
-            else { this.style.opacity = 0.0; /* hide if not found */ }
-          ">
+          onerror="this.style.opacity=0; console.warn('Logo not found at images/logo-stijn.jpg');">
       </span>
 
       <div class="brand-title">Welcome to Vers Le Vin</div>
@@ -155,16 +151,29 @@
   </footer>
 
   <script>
-    // Optional: add a subtle perspective correction so flip looks consistent on retina devices
-    (function(){
-      const wrap = document.querySelector('.logo-wrap');
-      if(!wrap) return;
-      // small tweak for mobile: reduce perspective on small screens
+    // Enable click/touch toggle for mobile so the flip works without hover
+    (function () {
+      const wrap = document.getElementById('logoWrap');
+      if (!wrap) return;
+
+      // Toggle flip on click or Enter/Space when focused
+      wrap.addEventListener('click', () => wrap.classList.toggle('is-flipped'));
+      wrap.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          wrap.classList.toggle('is-flipped');
+        }
+      });
+
+      // Accessibility: remove flip state when focus leaves
+      wrap.addEventListener('blur', () => wrap.classList.remove('is-flipped'), true);
+
+      // Adjust perspective slightly for small screens
       function adjustPerspective(){
         const p = window.innerWidth < 520 ? 600 : 1000;
         wrap.style.perspective = p + 'px';
       }
-      window.addEventListener('resize', adjustPerspective, {passive:true});
+      window.addEventListener('resize', adjustPerspective, { passive: true });
       adjustPerspective();
     })();
   </script>
