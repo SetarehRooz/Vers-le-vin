@@ -14,10 +14,7 @@
       --bg: #F3ECDC;
     }
 
-    html,body{
-      height:100%;
-      margin:0;
-    }
+    html,body{ height:100%; margin:0; }
 
     body {
       font-family: 'DejaVu Sans Mono', monospace;
@@ -27,6 +24,7 @@
       flex-direction:column;
       min-height:100vh;
       position:relative;
+      overflow-x:hidden;
     }
 
     /* Navigation */
@@ -37,12 +35,7 @@
       padding: 22px 32px;
       font-size:18px;
     }
-
-    nav a{
-      color:var(--text-color);
-      text-decoration:none;
-      transition:opacity .18s ease;
-    }
+    nav a{ color:var(--text-color); text-decoration:none; transition:opacity .18s ease; }
     nav a:hover{ opacity:.6; }
 
     /* Centering container */
@@ -53,26 +46,36 @@
       justify-content:center;
       padding: 40px;
       perspective: 1000px;
+      position:relative; /* svg vine uses this as reference */
+    }
+
+    /* container for brand + vine */
+    .brand-wrap {
+      position: relative;
+      display: inline-block;
+      /* ensures svg can overlap */
+      padding: 40px;
     }
 
     .brand {
       display:flex;
       align-items:center;
-      gap: 40px; /* increased spacing */
+      gap: 40px;
       justify-content:center;
       text-align:left;
       user-select:none;
+      position: relative;
+      z-index: 3; /* above svg vine */
     }
 
     /* Bigger logo */
     .logo-wrap {
       display:inline-block;
-      width: 400px;  /* doubled from ~120px */
+      width: 400px;
       height: 400px;
       perspective: 1000px;
       cursor:pointer;
     }
-
     .logo {
       width:100%;
       height:100%;
@@ -85,12 +88,8 @@
       border-radius:8px;
       will-change:transform;
     }
-
-    /* vertical flip */
     .logo-wrap:hover .logo,
-    .logo-wrap.is-flipped .logo {
-      transform: rotateY(180deg);
-    }
+    .logo-wrap.is-flipped .logo { transform: rotateY(180deg); }
 
     .brand-title {
       font-size: 25px;
@@ -99,31 +98,76 @@
       color:var(--text-color);
     }
 
-  footer {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  font-size: 14px;
-  opacity: 0.85;
-  display: flex;
-  justify-content: space-between;
-  width: calc(100% - 20px);
-  padding-right: 10px;
-  pointer-events: none;
-}
+    /* Footer split */
+    footer {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      font-size: 14px;
+      opacity: 0.85;
+      display: flex;
+      justify-content: space-between;
+      width: calc(100% - 20px);
+      padding-right: 10px;
+      pointer-events: none;
+    }
+    footer span { pointer-events: auto; }
 
-footer span {
-  pointer-events: auto;
-}
+    /* THE VINE SVG (absolute overlay inside brand-wrap) */
+    .vine-svg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      overflow: visible;
+    }
 
+    /* default path styles */
+    .vine-path {
+      fill: none;
+      stroke: rgba(89,44,56,0.95); /* wine color */
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
+    }
+
+    /* leaf fill */
+    .vine-leaf {
+      fill: rgba(89,44,56,0.06);
+      stroke: rgba(89,44,56,0.95);
+      stroke-width: 1.2;
+    }
+
+    /* When a path gets the 'drawn' class, JS animates stroke-dashoffset to 0 */
+    .vine-path.drawn {
+      transition: stroke-dashoffset 900ms cubic-bezier(.2,.9,.3,1);
+      stroke-dashoffset: 0;
+    }
 
     /* Responsive */
+    @media (max-width:820px){
+      .logo-wrap { width: 260px; height:260px; }
+      .brand-title { font-size:20px; }
+      .brand-wrap { padding: 20px; }
+    }
+
     @media (max-width:520px){
       nav { gap:16px; font-size:15px; padding:14px; }
       .brand { gap:16px; flex-direction:column; }
       .logo-wrap { width:150px; height:150px; }
       .brand-title { font-size:22px; text-align:center; white-space:normal; }
+      .vine-svg { display: none; } /* hide complex SVG on tiny screens for perf */
     }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .vine-path { transition: none !important; stroke-dashoffset: 0 !important; }
+    }
+
   </style>
 </head>
 <body>
@@ -138,45 +182,55 @@ footer span {
   </nav>
 
   <main class="hero">
-    <div class="brand" aria-label="Vers Le Vin - logo and title">
+    <div class="brand-wrap" id="brandWrap" aria-hidden="false">
+      <!-- SVG vine overlay (drawn by JS) -->
+      <svg class="vine-svg" id="vineSvg" viewBox="0 0 700 420" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <!-- A few decorative vine paths and leaves. These are stylized and sized to sit around the brand box.
+             JS will animate each .vine-path sequentially. -->
+        <path class="vine-path" id="vine1" d="M40,360 C60,300 110,230 200,210 C290,190 360,200 420,170 C480,140 520,120 620,120" />
+        <path class="vine-path" id="vine2" d="M60,320 C120,300 170,270 230,250 C290,230 340,220 380,200" />
+        <path class="vine-path" id="vine3" d="M500,200 C520,170 540,150 560,138 C580,126 600,120 640,115" />
 
-      <div class="brand-title">Welcome to Vers Le Vin</div>
+        <!-- little tendrils -->
+        <path class="vine-path" id="tendril1" d="M180,210 C174,180 160,140 140,118" />
+        <path class="vine-path" id="tendril2" d="M360,200 C368,180 382,156 400,142" />
 
-      <!-- Logo on the right now -->
-      <span class="logo-wrap" id="logoWrap" tabindex="0">
-        <img
-          id="logo-img"
-          class="logo"
-          src="images/logo-stijn.jpg"
-          alt="Vers Le Vin logo"
-          onerror="this.style.opacity=0;">
-      </span>
+        <!-- leaves built as small paths (we'll animate their stroke too; they have a slight fill) -->
+        <path class="vine-path vine-leaf" id="leaf1" d="M220,230 C212,220 200,216 190,220 C198,232 210,240 220,230 Z" />
+        <path class="vine-path vine-leaf" id="leaf2" d="M420,160 C432,150 444,148 452,158 C442,168 428,172 420,160 Z" />
+      </svg>
 
+      <div class="brand" aria-label="Vers Le Vin - logo and title">
+        <div class="brand-title">Welcome to Vers Le Vin</div>
+
+        <span class="logo-wrap" id="logoWrap" tabindex="0">
+          <img id="logo-img" class="logo" src="images/logo-stijn.jpg" alt="Vers Le Vin logo" onerror="this.style.opacity=0;">
+        </span>
+      </div>
     </div>
   </main>
 
- <footer>
-  <span>© 2025 Vers Le Vin</span>
-  <span>by Stijn Verschelden</span>
-</footer>
+  <footer>
+    <span>© 2025 Vers Le Vin</span>
+    <span>by Stijn Verschelden</span>
+  </footer>
 
+  <!-- separate vine animation JS -->
+  <script src="vine.js" defer></script>
+
+  <!-- keep existing flip script inline for simplicity -->
   <script>
-    // click/touch flip support
     (function () {
       const wrap = document.getElementById('logoWrap');
       if (!wrap) return;
-
       wrap.addEventListener('click', () => wrap.classList.toggle('is-flipped'));
-
       wrap.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           wrap.classList.toggle('is-flipped');
         }
       });
-
       wrap.addEventListener('blur', () => wrap.classList.remove('is-flipped'), true);
-
       function adjustPerspective(){
         const p = window.innerWidth < 520 ? 600 : 1000;
         wrap.style.perspective = p + 'px';
@@ -185,6 +239,5 @@ footer span {
       adjustPerspective();
     })();
   </script>
-
 </body>
 </html>
