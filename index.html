@@ -53,23 +53,25 @@
     .brand-wrap {
       position: relative;
       display: inline-block;
-      padding: 20px 48px; /* give space for vine */
-      /* make sure brand-wrap sizes to content */
+      padding: 20px 56px; /* give space for vine */
+      /* ensure brand-wrap sizes to content */
     }
 
-    /* place interactive SVG ON TOP by default (z-index higher) */
+    /* place interactive SVG around logo (z-index between elements) */
     .vine-svg {
       position: absolute;
-      left: 0;
+      /* we'll anchor the SVG to the right side where the logo sits */
+      right: 0;
       top: 0;
-      width: 100%;
-      height: 100%;
+      width: 520px;   /* adjust size to fit around logo */
+      height: 520px;
       pointer-events: none; /* keep it non-blocking */
-      z-index: 4; /* top */
+      z-index: 3; /* sits above background but below text/logo if needed */
       overflow: visible;
+      transform: translate(18px, -18px); /* subtle offset so vine wraps naturally */
     }
 
-    /* THE BRAND ROW: logo left, text right, bottom aligned */
+    /* THE BRAND ROW: text (left) aligned bottom, logo (right) */
     .brand {
       display:flex;
       align-items:flex-end;        /* align children by bottom edge */
@@ -78,17 +80,19 @@
       text-align:left;
       user-select:none;
       position: relative;
-      z-index: 3; /* below vine which has z-index:4 */
+      z-index: 4; /* above vine so logo/text still clickable/visible */
     }
 
     /* Logo */
     .logo-wrap {
       display:inline-block;
-      width: 400px;
-      height: 400px;
+      width: 320px;
+      height: 320px;
       perspective: 1000px;
       cursor:pointer;
       flex-shrink: 0;
+      position: relative;
+      z-index: 5;
     }
     .logo {
       width:100%;
@@ -101,17 +105,20 @@
       transform-origin:center center;
       border-radius:8px;
       will-change:transform;
+      box-shadow: 0 8px 30px rgba(89,44,56,0.06);
+      background: rgba(255,255,255,0.02);
     }
     .logo-wrap:hover .logo,
     .logo-wrap.is-flipped .logo { transform: rotateY(180deg); }
 
-    /* Title aligned at bottom of the logo */
+    /* Title aligned at bottom of the logo (left) */
     .brand-title {
-      font-size: 28px;
+      font-size: 30px;
       line-height:1.05;
       color:var(--text-color);
-      margin-bottom: 12px; /* small offset so it sits a bit above the actual bottom if needed */
+      margin-bottom: 12px; /* sits slightly above bottom */
       white-space: nowrap;
+      z-index:6;
     }
 
     /* Footer split */
@@ -129,26 +136,39 @@
     }
     footer span { pointer-events: auto; }
 
-    /* vine path styles (same as before) */
+    /* SVG vine styling (paths and grapes handled mostly by CSS classes) */
     .vine-path {
       fill: none;
       stroke: rgba(89,44,56,0.95);
-      stroke-width: 2.2;
+      stroke-width: 2.4;
       stroke-linecap: round;
       stroke-linejoin: round;
       vector-effect: non-scaling-stroke;
+      opacity: 1;
     }
-    .vine-leaf {
-      fill: rgba(89,44,56,0.06);
-      stroke: rgba(89,44,56,0.95);
-      stroke-width: 1.2;
+    .grape {
+      fill: rgba(89,44,56,0.95);
+      stroke: rgba(255,255,255,0.06);
+      stroke-width: 0.8;
+      transform-origin: center center;
+      transform-box: fill-box;
+      transition: transform 420ms cubic-bezier(.2,.9,.3,1), opacity 260ms ease;
+      opacity: 0;
+      transform: scale(0.01);
     }
 
-    /* Responsive */
+    /* when grapes get 'pop' class they scale up */
+    .grape.pop {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Hide vine on small displays for performance */
     @media (max-width:820px){
-      .logo-wrap { width: 260px; height:260px; }
+      .logo-wrap { width: 240px; height:240px; }
       .brand-title { font-size:22px; }
-      .brand-wrap { padding: 16px 28px; }
+      .brand-wrap { padding: 12px 20px; }
+      .vine-svg { width: 420px; height:420px; transform: translate(8px, -8px); }
     }
 
     @media (max-width:520px){
@@ -162,8 +182,8 @@
     /* Respect reduced motion */
     @media (prefers-reduced-motion: reduce) {
       .vine-path { transition: none !important; stroke-dashoffset: 0 !important; }
+      .grape { transition: none !important; transform: none !important; opacity: 1 !important; }
     }
-
   </style>
 </head>
 <body>
@@ -180,25 +200,38 @@
   <main class="hero">
     <div class="brand-wrap" id="brandWrap" aria-hidden="false">
 
-      <!-- interactive SVG placed *before* brand markup but with z-index higher so it appears on top -->
-      <svg class="vine-svg" id="vineSvg" viewBox="0 0 700 420" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-        <path class="vine-path" id="vine1" d="M40,360 C60,300 110,230 200,210 C290,190 360,200 420,170 C480,140 520,120 620,120" />
-        <path class="vine-path" id="vine2" d="M60,320 C120,300 170,270 230,250 C290,230 340,220 380,200" />
-        <path class="vine-path" id="vine3" d="M500,200 C520,170 540,150 560,138 C580,126 600,120 640,115" />
-        <path class="vine-path" id="tendril1" d="M180,210 C174,180 160,140 140,118" />
-        <path class="vine-path" id="tendril2" d="M360,200 C368,180 382,156 400,142" />
-        <path class="vine-path vine-leaf" id="leaf1" d="M220,230 C212,220 200,216 190,220 C198,232 210,240 220,230 Z" />
-        <path class="vine-path vine-leaf" id="leaf2" d="M420,160 C432,150 444,148 452,158 C442,168 428,172 420,160 Z" />
+      <!-- Vine SVG anchored to the logo area on the right.
+           The viewBox is approx the wrapper space so coordinates are tuned to wrap the logo.
+           It contains vine paths and grape circles positioned roughly to look like a cluster.
+      -->
+      <svg class="vine-svg" id="vineSvg" viewBox="0 0 520 520" preserveAspectRatio="xMaxYMin meet" aria-hidden="true">
+        <!-- main curling vine -->
+        <path class="vine-path" id="vpath1" d="M40 420 C120 340 160 290 220 250 C280 210 340 200 380 170 C410 150 430 138 480 120" />
+        <path class="vine-path" id="vpath2" d="M120 360 C150 320 180 300 220 270 C260 240 300 230 340 210" />
+        <path class="vine-path" id="vpath3" d="M200 220 C210 210 230 200 258 190" />
+        <!-- tendril curls -->
+        <path class="vine-path" id="t1" d="M300 210 C320 190 340 172 356 160" />
+        <path class="vine-path" id="t2" d="M380 170 C392 162 406 158 420 154" />
+
+        <!-- stylized grape cluster (circles) positioned near the right/center -->
+        <circle class="grape" id="g1" cx="400" cy="230" r="12" />
+        <circle class="grape" id="g2" cx="420" cy="250" r="14" />
+        <circle class="grape" id="g3" cx="380" cy="250" r="13" />
+        <circle class="grape" id="g4" cx="410" cy="275" r="12" />
+        <circle class="grape" id="g5" cx="390" cy="286" r="10" />
+        <circle class="grape" id="g6" cx="420" cy="294" r="9" />
+        <circle class="grape" id="g7" cx="360" cy="280" r="11" />
+        <circle class="grape" id="g8" cx="430" cy="268" r="8" />
       </svg>
 
       <div class="brand" aria-label="Vers Le Vin - logo and title">
-        <!-- logo left -->
+        <!-- text on the left, bottom aligned with logo -->
+        <div class="brand-title">Welcome to Vers Le Vin</div>
+
+        <!-- logo on right -->
         <span class="logo-wrap" id="logoWrap" tabindex="0">
           <img id="logo-img" class="logo" src="images/logo-stijn.jpg" alt="Vers Le Vin logo" onerror="this.style.opacity=0;">
         </span>
-
-        <!-- text on the right aligned to bottom of logo -->
-        <div class="brand-title">Welcome to Vers Le Vin</div>
       </div>
     </div>
   </main>
@@ -208,7 +241,7 @@
     <span>by Stijn Verschelden</span>
   </footer>
 
-  <!-- vine animation script (keeps your vine.js unchanged) -->
+  <!-- vine animation script (new vine.js) -->
   <script src="vine.js" defer></script>
 
   <!-- logo flip script -->
