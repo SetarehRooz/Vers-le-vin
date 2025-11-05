@@ -6,8 +6,9 @@
   <title>Vers Le Vin</title>
 
   <style>
-    /* Font import */
+    /* Font imports: keep the monospace for nav & UI, plus a handwriting font for the title */
     @import url('https://fonts.googleapis.com/css2?family=DejaVu+Sans+Mono&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 
     :root{
       --text-color: #592C38;
@@ -54,21 +55,19 @@
       position: relative;
       display: inline-block;
       padding: 20px 56px; /* give space for vine */
-      /* ensure brand-wrap sizes to content */
     }
 
     /* place interactive SVG around logo (z-index between elements) */
     .vine-svg {
       position: absolute;
-      /* we'll anchor the SVG to the right side where the logo sits */
       left: 50px;
       bottom: 50px;
-      width: 520px;   /* adjust size to fit around logo */
+      width: 520px;
       height: 520px;
-      pointer-events: none; /* keep it non-blocking */
-      z-index: 3; /* sits above background but below text/logo if needed */
+      pointer-events: none;
+      z-index: 3;
       overflow: visible;
-      transform: translate(18px, -18px); /* subtle offset so vine wraps naturally */
+      transform: translate(18px, -18px);
     }
 
     /* THE BRAND ROW: text (left) aligned bottom, logo (right) */
@@ -80,7 +79,7 @@
       text-align:left;
       user-select:none;
       position: relative;
-      z-index: 4; /* above vine so logo/text still clickable/visible */
+      z-index: 4;
     }
 
     /* Logo */
@@ -111,15 +110,25 @@
     .logo-wrap:hover .logo,
     .logo-wrap.is-flipped .logo { transform: rotateY(180deg); }
 
-    /* Title aligned at bottom of the logo (left) */
+    /* Title aligned at bottom of the logo (left)
+       Use a handwriting font for a signature-like look */
     .brand-title {
-      font-size: 30px;
-      line-height:1.05;
-      color:var(--text-color);
-      margin-bottom: 12px; /* sits slightly above bottom */
+      font-family: 'Great Vibes', cursive;   /* <-- handwriting font */
+      font-size: 44px;                       /* larger, signature-like */
+      line-height: 1.02;
+      color: var(--text-color);
+      margin-bottom: 8px;
       white-space: nowrap;
-      z-index:6;
+      z-index: 6;
+      letter-spacing: 0.4px;                 /* slight spacing to keep it readable */
+      transform-origin: left bottom;
+      text-rendering: optimizeLegibility;
     }
+
+    /* If you'd like to combine a small monospace subtitle, example:
+       .brand-sub { font-family: 'DejaVu Sans Mono', monospace; font-size:14px; opacity:.85;}
+       You can add a subtitle under the signature if desired.
+    */
 
     /* Footer split */
     footer {
@@ -136,7 +145,7 @@
     }
     footer span { pointer-events: auto; }
 
-    /* SVG vine styling (paths and grapes handled mostly by CSS classes) */
+    /* SVG vine styling */
     .vine-path {
       fill: none;
       stroke: rgba(89,44,56,0.95);
@@ -157,7 +166,6 @@
       transform: scale(0.01);
     }
 
-    /* when grapes get 'pop' class they scale up */
     .grape.pop {
       opacity: 1;
       transform: scale(1);
@@ -166,7 +174,7 @@
     /* Hide vine on small displays for performance */
     @media (max-width:820px){
       .logo-wrap { width: 240px; height:240px; }
-      .brand-title { font-size:22px; }
+      .brand-title { font-size: 34px; }
       .brand-wrap { padding: 12px 20px; }
       .vine-svg { width: 420px; height:420px; transform: translate(8px, -8px); }
     }
