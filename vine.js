@@ -1,99 +1,107 @@
 // vine.js
-// Simple sequential SVG path "draw" animation for the vine.
+// Draw vine paths, then pop grapes (circles) into view around the logo.
 // Put this file in the repo root and ensure index.html loads it as <script src="vine.js" defer></script>
 
-// IIFE to avoid globals
 (function () {
-  // Respect users who prefer reduced motion
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce) {
-    // Remove dashoffset so paths are visible immediately
-    document.querySelectorAll('.vine-path').forEach(p => {
-      p.style.strokeDasharray = 'none';
-      p.style.strokeDashoffset = '0';
+  // Respect reduced motion
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) {
+    // Make everything visible instantly
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.vine-path').forEach(p => {
+        p.style.strokeDasharray = 'none';
+        p.style.strokeDashoffset = '0';
+      });
+      document.querySelectorAll('.grape').forEach(g => {
+        g.style.opacity = '1';
+        g.style.transform = 'scale(1)';
+      });
     });
     return;
   }
 
-  // Wait for DOM
   document.addEventListener('DOMContentLoaded', () => {
     const svg = document.getElementById('vineSvg');
     if (!svg) return;
 
-    // Collect paths in the order we want to draw them
-    const drawOrder = [
-      'vine1', 'tendril1', 'vine2', 'leaf1',
-      'tendril2', 'vine3', 'leaf2'
-    ].map(id => document.getElementById(id)).filter(Boolean);
+    // path IDs in the order to draw
+    const pathIds = ['vpath1','vpath2','vpath3','t1','t2'];
+    const paths = pathIds.map(id => document.getElementById(id)).filter(Boolean);
 
-    // Setup each path for stroke-dash animation
-    drawOrder.forEach(path => {
+    // grapes (pop them after the vine draws)
+    const grapes = Array.from(svg.querySelectorAll('.grape'));
+
+    // prepare paths for dash animation
+    paths.forEach(p => {
       try {
-        const len = path.getTotalLength();
-        // Set dasharray and dashoffset to path length (hidden initially)
-        path.style.strokeDasharray = len + ' ' + len;
-        path.style.strokeDashoffset = len;
-        // Optional: slightly reduce stroke opacity for leaves vs main vine
-        // path.style.opacity = 0.95;
+        const len = p.getTotalLength();
+        p.style.strokeDasharray = `${len} ${len}`;
+        p.style.strokeDashoffset = `${len}`;
+        p.style.opacity = '1';
       } catch (e) {
-        // if getTotalLength fails, just skip
+        // ignore if can't compute
       }
     });
 
-    // Function to animate a single path to strokeDashoffset=0
-    function animatePath(path, duration = 800) {
+    // Helper to animate a path to 0 dashoffset (returns Promise)
+    function animatePath(path, duration = 700, delay = 0) {
       return new Promise(resolve => {
-        if (!path) { resolve(); return; }
-        // Use transition on stroke-dashoffset to animate the drawing
         path.style.transition = `stroke-dashoffset ${duration}ms cubic-bezier(.2,.9,.3,1), opacity ${Math.round(duration/2)}ms ease`;
-        // small delay before starting to ensure the style applied
-        requestAnimationFrame(() => {
-          // set to 0 to start animation
+        // small delay before starting
+        setTimeout(() => {
           path.style.strokeDashoffset = '0';
+          // ensure visible
           path.style.opacity = '1';
-        });
-
-        // resolve after duration
-        setTimeout(() => resolve(), duration + 40);
+          // resolve after duration
+          setTimeout(() => resolve(), duration + 30);
+        }, delay);
       });
     }
 
-    // Sequentially animate each path with small overlap
-    (async function runSequence() {
-      for (let i = 0; i < drawOrder.length; i++) {
-        const path = drawOrder[i];
-        // choose duration based on path length (fallback)
-        let dur = 700 + (i * 80); // slightly increasing
-        await animatePath(path, dur);
-        // small pause between some groups for natural feel
-        await new Promise(r => setTimeout(r, 80));
+    // Animate paths sequentially with a slight overlap
+    (async function run() {
+      let baseDur = 700;
+      for (let i = 0; i < paths.length; i++) {
+        const dur = baseDur + (i * 80);
+        await animatePath(paths[i], dur, 60); // slight in-between delay
+        // small pause before next
+        await new Promise(r => setTimeout(r, 60));
       }
 
-      // After drawing, optionally do a tiny leaf fill fade-in
-      drawOrder.forEach(p => {
-        if (p.classList.contains('vine-leaf')) {
-          // give leaves a slight fill in after draw
-          p.style.transition += ', fill 420ms ease';
-          p.style.fillOpacity = 0.9;
-        }
-      });
+      // After vine drawn, pop grapes sequentially with tiny stagger
+      for (let i = 0; i < grapes.length; i++) {
+        const g = grapes[i];
+        // small delay
+        await new Promise(r => setTimeout(r, 90 + Math.random() * 140));
+        g.classList.add('pop'); // CSS transition handles scale/opacity
+      }
+
+      // optional gentle final stroke / shimmer on vine
+      setTimeout(() => {
+        paths.forEach(p => {
+          p.style.transition = `stroke 800ms ease, opacity 400ms ease`;
+          // slightly lighten stroke for a moment
+          p.style.stroke = 'rgba(89,44,56,0.92)';
+        });
+      }, 600);
+
     })();
 
-    // Re-run on resize if necessary (recalculate lengths)
-    let resizeTimer;
+    // On resize, recompute lengths so the draw remains accurate if user resizes
+    let rt;
     window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        // reset dash lengths so the animation would still fit if re-run (optional)
-        drawOrder.forEach(path => {
+      clearTimeout(rt);
+      rt = setTimeout(() => {
+        paths.forEach(p => {
           try {
-            const len = path.getTotalLength();
-            path.style.strokeDasharray = len + ' ' + len;
-            // keep strokeDashoffset at 0 so it remains visible
-            path.style.strokeDashoffset = 0;
-          } catch (_) {}
+            const len = p.getTotalLength();
+            p.style.strokeDasharray = `${len} ${len}`;
+            // keep into visible state
+            p.style.strokeDashoffset = 0;
+          } catch (e) {}
         });
-      }, 250);
+      }, 220);
     });
+
   });
 })();
